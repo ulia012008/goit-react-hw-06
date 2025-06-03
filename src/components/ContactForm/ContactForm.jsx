@@ -1,50 +1,56 @@
-// import css from "./ContactForm.module.css";
-import { Formik, Form, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
-import { nanoid } from "nanoid";
-import { useDispatch } from "react-redux";
+import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { addContact } from "../../redux/contactsSlice";
 
-const ContactSchema = Yup.object().shape({
-  name: Yup.string()
-    .min(2, "Too Short!")
-    .max(50, "Too Long!")
-    .required("Required"),
-  number: Yup.string().required("Required"),
-});
+import css from "./ContactForm.module.css";
 
 export default function ContactForm() {
+  const [name, setName] = useState("");
+  const [number, setNumber] = useState("");
+  const contacts = useSelector((state) => state.contacts.items);
   const dispatch = useDispatch();
 
-  const handleSubmit = (values, { resetForm }) => {
-    const newContact = {
-      id: nanoid(),
-      name: values.name,
-      number: values.number,
-    };
-    dispatch(addContact(newContact));
-    resetForm();
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const isExist = contacts.some(
+      (contact) => contact.name.toLowerCase() === name.toLowerCase()
+    );
+    if (isExist) {
+      alert(`${name} is already in contacts.`);
+      return;
+    }
+
+    dispatch(addContact({ name, number }));
+    setName("");
+    setNumber("");
   };
 
   return (
-    <Formik
-      initialValues={{ name: "", number: "" }}
-      validationSchema={ContactSchema}
-      onSubmit={handleSubmit}
-    >
-      <Form>
-        <label>
-          Name
-          <Field type="text" name="name" />
-          <ErrorMessage name="name" component="div" />
-        </label>
-        <label>
-          Number
-          <Field type="tel" name="number" pattern="[0-9\-]+" />
-          <ErrorMessage name="number" component="div" />
-        </label>
-        <button type="submit">Add contact</button>
-      </Form>
-    </Formik>
+    <form className={css.form} onSubmit={handleSubmit}>
+      <label className={css.label}>
+        Name
+        <input
+          className={css.input}
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+      </label>
+      <label className={css.label}>
+        Number
+        <input
+          className={css.input}
+          type="tel"
+          value={number}
+          pattern={"\\+?[0-9]{1,3}?[0-9]{1,14}(?:x.+)?"}
+          onChange={(e) => setNumber(e.target.value)}
+          required
+        />
+      </label>
+      <button className={css.button} type="submit">
+        Add contact
+      </button>
+    </form>
   );
 }
